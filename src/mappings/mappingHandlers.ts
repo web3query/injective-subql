@@ -1,5 +1,28 @@
-import { GasConsumption, SpotLimitOrder, Transaction } from '../types'
+import { SpotLimitOrder, Transaction } from '../types'
 import { CosmosMessage, CosmosTransaction } from '@subql/types-cosmos'
+
+export async function handleTransaction(_tx: CosmosTransaction): Promise<void> {
+  const { fee } = _tx.decodedTx.authInfo
+  const {
+    hash,
+    idx,
+    block: {
+      block: {
+        header: { height, time },
+      },
+    },
+    tx: { gasUsed, code },
+  } = _tx
+  const transactionRecord = Transaction.create({
+    id: `${hash}-${idx}`,
+    blockHeight: height,
+    timestamp: BigInt(time.valueOf()),
+    denom: fee && fee.amount[0].denom,
+    gasUsed: BigInt(gasUsed),
+    status: code === 0 ? 'success' : 'failed',
+  })
+  await transactionRecord.save()
+}
 
 type SpotLimitOrderMessage = {
   sender: string
@@ -13,85 +36,6 @@ type SpotLimitOrderMessage = {
       quantity: string
     }
   }
-}
-
-/*
-export async function handleBlock(block: CosmosBlock): Promise<void> {
-  // If you want to index each block in Cosmos (CosmosHub), you could do that here
-}
-*/
-
-/*
-export async function handleTransaction(tx: CosmosTransaction): Promise<void> {
-  // If you want to index each transaction in Cosmos (CosmosHub), you could do that here
-  const transactionRecord = Transaction.create({
-    id: tx.hash,
-    blockHeight: BigInt(tx.block.block.header.height),
-    timestamp: tx.block.block.header.time,
-  });
-  await transactionRecord.save();
-}
-
-export async function handleEvent(event: CosmosEvent): Promise<void> {
-  const eventRecord = new TransferEvent(
-    `${event.tx.hash}-${event.msg.idx}-${event.idx}`
-  );
-  eventRecord.blockHeight = BigInt(event.block.block.header.height);
-  eventRecord.txHash = event.tx.hash;
-  for (const attr of event.event.attributes) {
-    switch (attr.key) {
-      case "recipient":
-        eventRecord.recipient = attr.value;
-        break;
-      case "amount":
-        eventRecord.amount = attr.value;
-        break;
-      case "sender":
-        eventRecord.sender = attr.value;
-        break;
-      default:
-        break;
-    }
-  }
-  await eventRecord.save();
-}
-*/
-
-export async function handleTransaction(tx: CosmosTransaction): Promise<void> {
-  // If you want to index each transaction in Cosmos (CosmosHub), you could do that here
-  // logger.info(JSON.stringify(tx.decodedTx.authInfo.fee))
-  const { fee } = tx.decodedTx.authInfo
-  if (fee) {
-    const gasConsumption = GasConsumption.create({
-      id: `${tx.hash}-${tx.idx}`,
-      denom: fee.amount[0].denom,
-      gas: BigInt(fee.gasLimit.low),
-      timestamp: tx.block.block.header.time.toDateString(),
-    })
-    await gasConsumption.save()
-  }
-  logger.info(`txhash: ${tx.hash}`)
-  logger.info(`:${tx.block.block.header.height}: tx raw: ${JSON.stringify(tx.tx)}`)
-  logger.info(`:${tx.block.block.header.height}: tx decoded: ${JSON.stringify(tx.decodedTx)}`)
-
-  if (tx.block.header.height !== 34223092) {
-    process.exit(1)
-  }
-  // logger.info(`events: ${JSON.stringify(tx.tx.events)}`)
-  // logger.info(`log: ${JSON.stringify(tx.tx.log)}`)
-  const t = Transaction.create({
-    id: `${tx.hash}-${tx.idx}`,
-    blockHeight: BigInt(tx.block.block.header.height),
-    timestamp: tx.block.block.header.time.toDateString(),
-  })
-  await t.save()
-
-  // const transactionRecord = Transaction.create({
-  //   id: tx.hash,
-  //   blockHeight: BigInt(tx.block.block.header.height),
-  //   timestamp: tx.block.block.header.time,
-  // });
-  // await transactionRecord.save();
 }
 
 export async function handleMessage(msg: CosmosMessage<SpotLimitOrderMessage>): Promise<void> {

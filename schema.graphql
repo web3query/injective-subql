@@ -18,13 +18,13 @@
 
 type Transaction @entity {
   id: ID!
-  blockHeight: BigInt!
-  timestamp: String!
+  blockHeight: Int!
+  timestamp: BigInt!
   status: String!
 
   "Fee data"
   denom: String
-  gasUsed: Int!
+  gasUsed: BigInt!
 }
 
 type SpotLimitOrder @entity {
@@ -39,11 +39,4 @@ type SpotLimitOrder @entity {
   price: BigInt!
   quantity: BigInt!
   amount: BigInt!
-}
-
-type GasConsumption @entity {
-  id: ID!
-  denom: String!
-  gas: BigInt!
-  timestamp: String!
 }

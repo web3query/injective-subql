@@ -37,7 +37,7 @@ network:
         - MsgExecuteContractCompat
 dataSources:
   - kind: cosmos/Runtime
-    startBlock: 34223092
+    startBlock: 34231855
     mapping:
       file: ./dist/index.js
       handlers:
