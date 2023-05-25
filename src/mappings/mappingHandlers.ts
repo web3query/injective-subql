@@ -1,19 +1,19 @@
-import { GasConsumption, SpotLimitOrder } from "../types";
-import { CosmosMessage, CosmosTransaction } from "@subql/types-cosmos";
+import { GasConsumption, SpotLimitOrder, Transaction } from '../types'
+import { CosmosMessage, CosmosTransaction } from '@subql/types-cosmos'
 
 type SpotLimitOrderMessage = {
-  sender: string;
+  sender: string
   order: {
-    marketId: string;
-    orderType: string;
+    marketId: string
+    orderType: string
     orderInfo: {
-      subaccountId: string;
-      feeRecipient: string;
-      price: string;
-      quantity: string;
-    };
-  };
-};
+      subaccountId: string
+      feeRecipient: string
+      price: string
+      quantity: string
+    }
+  }
+}
 
 /*
 export async function handleBlock(block: CosmosBlock): Promise<void> {
@@ -61,14 +61,30 @@ export async function handleTransaction(tx: CosmosTransaction): Promise<void> {
   // If you want to index each transaction in Cosmos (CosmosHub), you could do that here
   // logger.info(JSON.stringify(tx.decodedTx.authInfo.fee))
   const { fee } = tx.decodedTx.authInfo
-  const gasConsumption = GasConsumption.create({
+  if (fee) {
+    const gasConsumption = GasConsumption.create({
       id: `${tx.hash}-${tx.idx}`,
       denom: fee.amount[0].denom,
       gas: BigInt(fee.gasLimit.low),
-      timestamp: tx.block.block.header.time
+      timestamp: tx.block.block.header.time.toDateString(),
     })
-  await gasConsumption.save()
+    await gasConsumption.save()
+  }
+  logger.info(`txhash: ${tx.hash}`)
+  logger.info(`:${tx.block.block.header.height}: tx raw: ${JSON.stringify(tx.tx)}`)
+  logger.info(`:${tx.block.block.header.height}: tx decoded: ${JSON.stringify(tx.decodedTx)}`)
 
+  if (tx.block.header.height !== 34223092) {
+    process.exit(1)
+  }
+  // logger.info(`events: ${JSON.stringify(tx.tx.events)}`)
+  // logger.info(`log: ${JSON.stringify(tx.tx.log)}`)
+  const t = Transaction.create({
+    id: `${tx.hash}-${tx.idx}`,
+    blockHeight: BigInt(tx.block.block.header.height),
+    timestamp: tx.block.block.header.time.toDateString(),
+  })
+  await t.save()
 
   // const transactionRecord = Transaction.create({
   //   id: tx.hash,
@@ -78,9 +94,7 @@ export async function handleTransaction(tx: CosmosTransaction): Promise<void> {
   // await transactionRecord.save();
 }
 
-export async function handleMessage(
-  msg: CosmosMessage<SpotLimitOrderMessage>
-): Promise<void> {
+export async function handleMessage(msg: CosmosMessage<SpotLimitOrderMessage>): Promise<void> {
   //logger.info(JSON.stringify(msg));
   const spotLimitOrder = SpotLimitOrder.create({
     id: `${msg.tx.hash}-${msg.idx}`,
@@ -93,15 +107,13 @@ export async function handleMessage(
     feeRecipient: msg.msg.decodedMsg.order.orderInfo.feeRecipient,
     price: BigInt(msg.msg.decodedMsg.order.orderInfo.price),
     quantity: BigInt(msg.msg.decodedMsg.order.orderInfo.quantity),
-    amount:
-      BigInt(msg.msg.decodedMsg.order.orderInfo.price) *
-      BigInt(msg.msg.decodedMsg.order.orderInfo.quantity),
-  });
+    amount: BigInt(msg.msg.decodedMsg.order.orderInfo.price) * BigInt(msg.msg.decodedMsg.order.orderInfo.quantity),
+  })
   // await spotLimitOrder.save();
 }
 
 type ExecuteContractCompatMessage = {
-  sender: string,
+  sender: string
   contract: string
   msg: any
   funds: string

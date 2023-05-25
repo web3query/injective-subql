@@ -7,12 +7,6 @@
 #   height: BigInt!
 # }
 
-# type Transaction @entity {
-#   id: ID!
-#   blockHeight: BigInt!
-#   timestamp: String!
-# }
-
 # type TransferEvent @entity {
 #   id: ID!
 #   blockHeight: BigInt!
@@ -21,6 +15,17 @@
 #   sender: String!
 #   amount: String!
 # }
+
+type Transaction @entity {
+  id: ID!
+  blockHeight: BigInt!
+  timestamp: String!
+  status: String!
+
+  "Fee data"
+  denom: String
+  gasUsed: Int!
+}
 
 type SpotLimitOrder @entity {
   id: ID!
@@ -41,9 +46,4 @@ type GasConsumption @entity {
   denom: String!
   gas: BigInt!
   timestamp: String!
-}
-
-type TotalTransaction @entity {
-  id: ID!
-  count: BigInt!
 }
