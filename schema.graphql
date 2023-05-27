@@ -2,78 +2,76 @@
 # Add the `@index` or `@index(unique: true)` annotation after any non-key field
 # https://academy.subquery.network/build/graphql.html#indexing-by-non-primary-key-field
 
-# type Block @entity {
-#   id: ID! # The block hash
-#   height: BigInt!
-# }
-
-# type TransferEvent @entity {
-#   id: ID!
-#   blockHeight: BigInt!
-#   txHash: String!
-#   recipient: String!
-#   sender: String!
-#   amount: String!
-# }
-
 type Account @entity {
+  "Account address"
   id: ID!
-  blockHeight: Int!
-  timestamp: BigInt!
-  address: String!
-}
 
-type Transaction @entity {
-  id: ID!
+  "Block height that we inserted in database"
   blockHeight: Int!
-  timestamp: BigInt!
-  status: String!
 
-  "Fee data"
-  denom: String
-  gasUsed: BigInt!
+  "Block timestamp"
+  timestamp: BigInt!
 }
 
 type Contract @entity {
+  "Address of the contract"
   id: ID!
+
+  "Block height that we inserted contract in database"
   blockHeight: Int!
 
   "Timestamp of the block"
   timestamp: BigInt!
 
-  "Address of the contract"
-  address: String!
+  transactions: [ContractTransaction!] @derivedFrom(field: "contract")
+}
 
-  "Number of txs for the contract"
-  txCount: Int!
+type Transaction @entity {
+  "{hash}-{index in block}"
+  id: ID!
 
-  "Number of failed txs for the contract"
-  failedTxCount: Int!
+  "Block height that we inserted in database"
+  blockHeight: Int!
 
-  "Total gas used during contract executions"
+  "Block timestamp"
+  timestamp: BigInt!
+
+  "success or failed"
+  status: String!
+
+  "Chain id i.e injective-1"
+  chainId: String!
+
+  "Denom is in fee information"
+  denom: String
+
+  "Amount of gas being used at tx execution"
   gasUsed: BigInt!
 }
 
-type Chain @entity {
+type ContractTransaction @entity {
+  "{hash}-{contract address}"
   id: ID!
 
-  "Last produced block that include at least a tx"
+  "Block height that we inserted in database"
   blockHeight: Int!
 
   "Timestamp of the block"
   timestamp: BigInt!
 
-  "Name of the chain"
+  "success or failed"
+  status: String!
+
+  "Chain id i.e injective-1"
   chainId: String!
 
-  "Number of txs for the chain effective after starting monitor"
-  txCount: Int!
+  "Denom is in fee information"
+  denom: String
 
-  "Number of failed txs for the chain effective after starting monitor"
-  failedTxCount: Int!
-
-  "Total gas used for the chain effective after starting monitor"
+  "Total gas used during contract executions"
   gasUsed: BigInt!
+
+  contract: Contract!
 }
 
 type SpotLimitOrder @entity {

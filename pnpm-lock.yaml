@@ -6012,6 +6012,7 @@ packages:
 
   /ipfs-core-types@0.7.3(node-fetch@2.6.11):
     resolution: {integrity: sha512-FkmOlqhEf3yG0K8Qt7We7kqA0xKjj8pe0dmNK593I3cgMP0MQS/xjMj1CXVdGeZc5Nn5CJ+TsuQydPbJ+7Y8eQ==}
+    deprecated: js-IPFS has been deprecated in favour of Helia - please see https://github.com/ipfs/js-ipfs/issues/4336 for details
     dependencies:
       interface-datastore: 5.2.0
       multiaddr: 10.0.1(node-fetch@2.6.11)
@@ -6023,6 +6024,7 @@ packages:
 
   /ipfs-core-types@0.7.3(node-fetch@2.6.7):
     resolution: {integrity: sha512-FkmOlqhEf3yG0K8Qt7We7kqA0xKjj8pe0dmNK593I3cgMP0MQS/xjMj1CXVdGeZc5Nn5CJ+TsuQydPbJ+7Y8eQ==}
+    deprecated: js-IPFS has been deprecated in favour of Helia - please see https://github.com/ipfs/js-ipfs/issues/4336 for details
     dependencies:
       interface-datastore: 5.2.0
       multiaddr: 10.0.1(node-fetch@2.6.7)
@@ -6034,6 +6036,7 @@ packages:
 
   /ipfs-core-utils@0.10.5(node-fetch@2.6.11):
     resolution: {integrity: sha512-WPRbMkbn/99pKMF3h8x1/c19+eTXVWOZu1+cmlc3NLR6gMlCd8KNpcq9OCAvs9G1JHx3w/FbEWHnqJm0TJMvrw==}
+    deprecated: js-IPFS has been deprecated in favour of Helia - please see https://github.com/ipfs/js-ipfs/issues/4336 for details
     dependencies:
       any-signal: 2.1.2
       blob-to-it: 1.0.4
@@ -6058,6 +6061,7 @@ packages:
 
   /ipfs-core-utils@0.10.5(node-fetch@2.6.7):
     resolution: {integrity: sha512-WPRbMkbn/99pKMF3h8x1/c19+eTXVWOZu1+cmlc3NLR6gMlCd8KNpcq9OCAvs9G1JHx3w/FbEWHnqJm0TJMvrw==}
+    deprecated: js-IPFS has been deprecated in favour of Helia - please see https://github.com/ipfs/js-ipfs/issues/4336 for details
     dependencies:
       any-signal: 2.1.2
       blob-to-it: 1.0.4

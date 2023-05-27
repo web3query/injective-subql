@@ -1,12 +1,12 @@
-import { Account, Chain, Contract, SpotLimitOrder, Transaction } from '../types'
+import { Account, Contract, ContractTransaction, SpotLimitOrder, Transaction } from '../types'
 import { CosmosMessage, CosmosTransaction } from '@subql/types-cosmos'
 
-async function createAccountsIfNotExists(
+async function getOrCreateAccount(
   payer: string,
   granter: string,
   height: number,
   timestamp: bigint,
-): Promise<void> {
+): Promise<{ payerAcc: Account | undefined; granterAcc: Account | undefined }> {
   let payerAcc = await Account.get(payer)
   let granterAcc = await Account.get(granter)
 
@@ -15,7 +15,6 @@ async function createAccountsIfNotExists(
       id: payer,
       blockHeight: height,
       timestamp,
-      address: payer,
     })
     await payerAcc.save()
   }
@@ -24,10 +23,10 @@ async function createAccountsIfNotExists(
       id: granter,
       blockHeight: height,
       timestamp,
-      address: granter,
     })
     await granterAcc.save()
   }
+  return { payerAcc, granterAcc }
 }
 
 export async function handleTransaction(_tx: CosmosTransaction): Promise<void> {
@@ -43,6 +42,10 @@ export async function handleTransaction(_tx: CosmosTransaction): Promise<void> {
     tx: { gasUsed, code },
   } = _tx
 
+  if (fee) {
+    const { payer, granter } = fee
+    await getOrCreateAccount(payer, granter, height, BigInt(time.valueOf()))
+  }
   const transactionRecord = Transaction.create({
     id: `${hash}-${idx}`,
     blockHeight: height,
@@ -50,32 +53,9 @@ export async function handleTransaction(_tx: CosmosTransaction): Promise<void> {
     denom: fee && fee.amount[0].denom,
     gasUsed: BigInt(gasUsed),
     status: code === 0 ? 'success' : 'failed',
+    chainId: chainId,
   })
   await transactionRecord.save()
-
-  if (fee) {
-    const { payer, granter } = fee
-    await createAccountsIfNotExists(payer, granter, height, BigInt(time.valueOf()))
-  }
-  let chain = await Chain.get(chainId)
-  if (chain) {
-    chain.blockHeight = height
-    chain.timestamp = BigInt(time.valueOf())
-    chain.gasUsed = chain.gasUsed + BigInt(gasUsed)
-    chain.txCount = chain.txCount + 1
-    chain.failedTxCount = chain.failedTxCount + (Boolean(code) ? 1 : 0)
-  } else {
-    chain = Chain.create({
-      id: chainId,
-      chainId,
-      blockHeight: height,
-      timestamp: BigInt(time.valueOf()),
-      gasUsed: BigInt(gasUsed),
-      txCount: 1,
-      failedTxCount: Boolean(code) ? 1 : 0,
-    })
-  }
-  await chain.save()
 }
 
 type ExecuteContractCompatMessage = {
@@ -86,30 +66,38 @@ type ExecuteContractCompatMessage = {
 }
 
 export async function handleContractExecute(msg_: CosmosMessage<ExecuteContractCompatMessage>): Promise<void> {
-  const { msg, tx, block } = msg_
+  const {
+    msg,
+    tx: {
+      decodedTx: {
+        authInfo: { fee },
+      },
+      hash,
+      tx: { gasUsed, code },
+    },
+    block: {
+      header: { height, time, chainId },
+    },
+  } = msg_
   const { decodedMsg } = msg
 
-  const isFailed = Boolean(tx.tx.code) // code = 0 is success
   let contract = await Contract.get(decodedMsg.contract)
-
-  if (contract) {
-    contract.txCount = contract.txCount + 1
-    contract.failedTxCount = contract.failedTxCount + (isFailed ? 1 : 0)
-    contract.timestamp = BigInt(block.header.time.valueOf())
-    contract.blockHeight = block.header.height
-  } else {
-    const { contract: address } = decodedMsg
-    contract = Contract.create({
-      id: address,
-      address,
-      blockHeight: block.header.height,
-      timestamp: BigInt(block.header.time.valueOf()),
-      txCount: 1,
-      failedTxCount: isFailed ? 1 : 0,
-      gasUsed: BigInt(tx.tx.gasUsed),
-    })
+  if (!contract) {
+    contract = Contract.create({ id: decodedMsg.contract, blockHeight: height, timestamp: BigInt(time.valueOf()) })
+    await contract.save()
   }
-  await contract.save()
+
+  const contractTx = ContractTransaction.create({
+    id: `${hash}-${contract.id}`,
+    blockHeight: height,
+    timestamp: BigInt(time.valueOf()),
+    chainId: chainId,
+    contractId: contract.id,
+    denom: fee && fee.amount[0].denom,
+    gasUsed: BigInt(gasUsed),
+    status: code === 0 ? 'success' : 'failed',
+  })
+  await contractTx.save()
 }
 
 type SpotLimitOrderMessage = {
