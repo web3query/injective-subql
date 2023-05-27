@@ -16,6 +16,13 @@
 #   amount: String!
 # }
 
+type Account @entity {
+  id: ID!
+  blockHeight: Int!
+  timestamp: BigInt!
+  address: String!
+}
+
 type Transaction @entity {
   id: ID!
   blockHeight: Int!
@@ -24,6 +31,48 @@ type Transaction @entity {
 
   "Fee data"
   denom: String
+  gasUsed: BigInt!
+}
+
+type Contract @entity {
+  id: ID!
+  blockHeight: Int!
+
+  "Timestamp of the block"
+  timestamp: BigInt!
+
+  "Address of the contract"
+  address: String!
+
+  "Number of txs for the contract"
+  txCount: Int!
+
+  "Number of failed txs for the contract"
+  failedTxCount: Int!
+
+  "Total gas used during contract executions"
+  gasUsed: BigInt!
+}
+
+type Chain @entity {
+  id: ID!
+
+  "Last produced block that include at least a tx"
+  blockHeight: Int!
+
+  "Timestamp of the block"
+  timestamp: BigInt!
+
+  "Name of the chain"
+  chainId: String!
+
+  "Number of txs for the chain effective after starting monitor"
+  txCount: Int!
+
+  "Number of failed txs for the chain effective after starting monitor"
+  failedTxCount: Int!
+
+  "Total gas used for the chain effective after starting monitor"
   gasUsed: BigInt!
 }
 
