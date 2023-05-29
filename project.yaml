@@ -37,7 +37,7 @@ network:
         - MsgExecuteContractCompat
 dataSources:
   - kind: cosmos/Runtime
-    startBlock: 34231855
+    startBlock: 34556151
     mapping:
       file: ./dist/index.js
       handlers:
@@ -48,12 +48,12 @@ dataSources:
         - handler: handleTransaction
           kind: cosmos/TransactionHandler
 
-        # - handler: handleEvent
-        #   kind: cosmos/EventHandler
-        #   filter:
-        #     type: transfer
-        #     messageFilter:
-        #       type: /injective.exchange.v1beta1.MsgCreateSpotLimitOrder
+        - handler: handleTransferEvent
+          kind: cosmos/EventHandler
+          filter:
+            type: /cosmos.bank.v1beta1.MsgSend
+            # messageFilter:
+            #   type: /cosmos.bank.v1beta1.MsgSend
         - handler: handleMessage
           kind: cosmos/MessageHandler
           filter:

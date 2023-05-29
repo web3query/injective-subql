@@ -11,6 +11,29 @@ type Account @entity {
 
   "Block timestamp"
   timestamp: BigInt!
+
+  "Chain id i.e injective-1"
+  chainId: String!
+}
+
+type AccountBalance @entity {
+  "Account address"
+  id: ID!
+
+  "Block height that we inserted in database"
+  blockHeight: Int!
+
+  "Block timestamp"
+  timestamp: BigInt!
+
+  "Amount"
+  amount: BigInt!
+
+  "Account"
+  account: Account!
+
+  "Chain id i.e injective-1"
+  chainId: String!
 }
 
 type Contract @entity {
@@ -22,6 +45,9 @@ type Contract @entity {
 
   "Timestamp of the block"
   timestamp: BigInt!
+
+  "Chain id i.e injective-1"
+  chainId: String!
 
   transactions: [ContractTransaction!] @derivedFrom(field: "contract")
 }

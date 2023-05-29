@@ -35,7 +35,6 @@ services:
       - ${SUB_COMMAND} # set SUB_COMMAND env variable to "test" to run tests
       - -f=/app
       - --db-schema=app
-      - --subscription
 
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://subquery-node:3000/ready']
@@ -63,4 +62,3 @@ services:
       - --name=app
       - --playground
       - --indexer=http://subquery-node:3000
-      - --subscription

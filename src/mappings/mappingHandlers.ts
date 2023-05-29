@@ -1,32 +1,75 @@
-import { Account, Contract, ContractTransaction, SpotLimitOrder, Transaction } from '../types'
-import { CosmosMessage, CosmosTransaction } from '@subql/types-cosmos'
+import { Account, AccountBalance, Contract, ContractTransaction, SpotLimitOrder, Transaction } from '../types'
+import { CosmosEvent, CosmosMessage, CosmosTransaction } from '@subql/types-cosmos'
 
 async function getOrCreateAccount(
-  payer: string,
-  granter: string,
+  accountId: string,
   height: number,
-  timestamp: bigint,
-): Promise<{ payerAcc: Account | undefined; granterAcc: Account | undefined }> {
-  let payerAcc = await Account.get(payer)
-  let granterAcc = await Account.get(granter)
+  timestamp: number,
+  chainId: string,
+): Promise<Account> {
+  let account = await Account.get(accountId)
+  if (!account) {
+    account = Account.create({
+      id: accountId,
+      blockHeight: height,
+      timestamp: BigInt(timestamp),
+      chainId,
+    })
+    await account.save()
+  }
+  return account
+}
 
-  if (!payerAcc && payer !== '') {
-    payerAcc = Account.create({
-      id: payer,
+async function getOrCreateAccountBalance(
+  account: Account,
+  amount: bigint,
+  height: number,
+  timestamp: number,
+  operation: 'inc' | 'dec',
+): Promise<AccountBalance> {
+  let accountBalance = await AccountBalance.get(account.id)
+  if (!accountBalance) {
+    accountBalance = AccountBalance.create({
+      id: account.id,
+      accountId: account.id,
+      amount: amount,
       blockHeight: height,
-      timestamp,
+      timestamp: BigInt(timestamp),
+      chainId: account.chainId,
     })
-    await payerAcc.save()
+  } else {
+    accountBalance.amount = operation === 'inc' ? accountBalance.amount + amount : accountBalance.amount - amount
   }
-  if (!granterAcc && granter !== '') {
-    granterAcc = Account.create({
-      id: granter,
-      blockHeight: height,
-      timestamp,
-    })
-    await granterAcc.save()
+  return accountBalance
+}
+
+export async function handleTransferEvent(event: CosmosEvent): Promise<void> {
+  let recipient, sender
+  let amount = BigInt(0)
+  for (const attr of event.event.attributes) {
+    switch (attr.key) {
+      case 'recipient':
+        recipient = attr.value
+        break
+      case 'amount':
+        amount = BigInt(attr.value)
+        break
+      case 'sender':
+        sender = attr.value
+        break
+      default:
+        break
+    }
   }
-  return { payerAcc, granterAcc }
+  const { time, height, chainId } = event.block.block.header
+  if (sender) {
+    const senderAccount = await getOrCreateAccount(sender, height, time.valueOf(), chainId)
+    await getOrCreateAccountBalance(senderAccount, amount, height, time.valueOf(), 'dec')
+  }
+  if (recipient) {
+    const recipientAccount = await getOrCreateAccount(recipient, height, time.valueOf(), chainId)
+    await getOrCreateAccountBalance(recipientAccount, amount, height, time.valueOf(), 'inc')
+  }
 }
 
 export async function handleTransaction(_tx: CosmosTransaction): Promise<void> {
@@ -41,11 +84,6 @@ export async function handleTransaction(_tx: CosmosTransaction): Promise<void> {
     },
     tx: { gasUsed, code },
   } = _tx
-
-  if (fee) {
-    const { payer, granter } = fee
-    await getOrCreateAccount(payer, granter, height, BigInt(time.valueOf()))
-  }
   const transactionRecord = Transaction.create({
     id: `${hash}-${idx}`,
     blockHeight: height,
@@ -83,10 +121,14 @@ export async function handleContractExecute(msg_: CosmosMessage<ExecuteContractC
 
   let contract = await Contract.get(decodedMsg.contract)
   if (!contract) {
-    contract = Contract.create({ id: decodedMsg.contract, blockHeight: height, timestamp: BigInt(time.valueOf()) })
+    contract = Contract.create({
+      id: decodedMsg.contract,
+      blockHeight: height,
+      timestamp: BigInt(time.valueOf()),
+      chainId,
+    })
     await contract.save()
   }
-
   const contractTx = ContractTransaction.create({
     id: `${hash}-${contract.id}`,
     blockHeight: height,
